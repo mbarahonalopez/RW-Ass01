@@ -3,6 +3,13 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 
+""" ---- User-Input Data ---- """
+# In order to select between propeller or wind turbine configuration
+PR = True
+WT = False
+
+# PR = False
+# WT = True
 """ ------- Functions ------- """
 
 def CTfunction(a, glauert = False):
@@ -18,8 +25,7 @@ def CTfunction(a, glauert = False):
         CT[a>a1] = CT1-4*(np.sqrt(CT1)-1)*(1-a[a>a1])
     
     return CT
-  
-    
+     
 def ainduction(CT):
     """
     This function calculates the induction factor 'a' as a function of thrust coefficient CT 
@@ -80,7 +86,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
     aline = 0.0 # tangential induction factor
     
     Niterations = 100
-    Erroriterations =0.00001 # error limit for iteration rpocess, in absolute value of induction
+    Erroriterations = 1e-5 # error limit for iteration rpocess, in absolute value of induction
     
     for i in range(Niterations):
         # ///////////////////////////////////////////////////////////////////////
@@ -108,8 +114,8 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
         
         # correct new axial induction with Prandtl's correction
         Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, Omega*Radius/Uinf, NBlades, anew);
-        if (Prandtl < 0.0001): 
-            Prandtl = 0.0001 # avoid divide by zero
+        if (Prandtl < 1e-1): 
+            Prandtl = 1e-1 # avoid divide by zero
         anew = anew/Prandtl # correct estimate of axial induction
         a = 0.75*a+0.25*anew # for improving convergence, weigh current and previous iteration of axial induction
 
@@ -162,21 +168,22 @@ plt.show()
 
 """ 3. import polar """
 
-# Wind turbine rotor
-# airfoil = 'DU95W180.cvs'
-# data1=pd.read_csv(airfoil, header=0,
-#                     names = ["alfa", "cl", "cd", "cm"],  sep='\s+')
-# polar_alpha = data1['alfa'][:]
-# polar_cl = data1['cl'][:]
-# polar_cd = data1['cd'][:]
-
-# Propeller case
-airfoil = 'ARAD8polar.csv'
-data1=pd.read_csv(airfoil, header=0,
-                    names = ["alfa", "cl", "cd", "cm"],  sep='\s+')
-polar_alpha = np.flipud(-data1['alfa'][:])
-polar_cl = np.flipud(-data1['cl'][:])
-polar_cd = np.flipud(data1['cd'][:])
+if (WT == True and PR == False):
+    # Wind turbine rotor
+    airfoil = 'DU95W180.cvs'
+    data1=pd.read_csv(airfoil, header=0,
+                        names = ["alfa", "cl", "cd", "cm"],  sep='\s+')
+    polar_alpha = data1['alfa'][:]
+    polar_cl = data1['cl'][:]
+    polar_cd = data1['cd'][:]
+elif (PR == True and WT == False):
+    # Propeller case
+    airfoil = 'ARAD8polar.csv'
+    data1=pd.read_csv(airfoil, header=0,
+                      names = ["alfa", "cl", "cd", "cm"],  sep='\s+')
+    polar_alpha = np.flipud(-data1['alfa'][:])
+    polar_cl = np.flipud(-data1['cl'][:])
+    polar_cd = np.flipud(data1['cd'][:])
 
 # plot polars of the airfoil C-alfa and Cl-Cd
 
@@ -195,38 +202,38 @@ plt.show()
 """ 4. Define the blade geometry """
 delta_r_R = .01
 
-# Wind turbine rotor
-# # Basic rotor specs
-# Radius = 50
-# NBlades = 3
-
-# # Blade specs
-# r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
-# pitch = - 2 # degrees
-# twist_distribution = -14*(1-r_R)+pitch # degrees
-# chord_distribution = 3*(1-r_R)+1 # meters
-
-# # Operational specs
-# Uinf = 10 # unperturbed wind speed in m/s
-# TSR = 6 # tip speed ratio
-# Omega = Uinf*TSR/Radius
-
-
-# Propeller rotor
-# Basic rotor specs
-Radius = 0.7
-NBlades = 6
-
-# Blade specs
-r_R = np.arange(0.25, 1+delta_r_R/2, delta_r_R)
-pitch = 2 # degrees
-twist_distribution = 0.*(-50*(r_R)+35.5+ 45.5) # degrees
-chord_distribution = 0.18-0.06*(r_R) # meters
-
-# Operational specs
-Uinf = 60 # unperturbed wind speed in m/s
-Omega = 1200/60*2*np.pi
-# h = 2000 #m
+if (WT == True and PR == False):
+    # Wind turbine rotor
+    # Basic rotor specs
+    Radius = 50
+    NBlades = 3
+    
+    # Blade specs
+    r_R = np.arange(0.2, 1+delta_r_R/2, delta_r_R)
+    pitch = - 2 # degrees
+    twist_distribution = -14*(1-r_R)+pitch # degrees
+    chord_distribution = 3*(1-r_R)+1 # meters
+    
+    # Operational specs
+    Uinf = 10 # unperturbed wind speed in m/s
+    TSR = 6 # tip speed ratio
+    Omega = Uinf*TSR/Radius
+elif (PR == True and WT == False):
+    # Propeller rotor
+    # Basic rotor specs
+    Radius = 0.7
+    NBlades = 6
+    
+    # Blade specs
+    r_R = np.arange(0.25, 1+delta_r_R/2, delta_r_R)
+    pitch = 2 # degrees
+    twist_distribution = 0.*(-50*(r_R)+35.5+ 45.5) # degrees
+    chord_distribution = 0.18-0.06*(r_R) # meters
+    
+    # Operational specs
+    Uinf = 60 # unperturbed wind speed in m/s
+    Omega = 1200/60*2*np.pi
+    # h = 2000 #m
 
 # solve BEM model
 
