@@ -86,7 +86,7 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
     aline = 0.0 # tangential induction factor
     
     Niterations = 100
-    Erroriterations = 1e-5 # error limit for iteration rpocess, in absolute value of induction
+    Erroriterations = 0.00001# error limit for iteration rpocess, in absolute value of induction
     
     for i in range(Niterations):
         # ///////////////////////////////////////////////////////////////////////
@@ -114,12 +114,12 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
         
         # correct new axial induction with Prandtl's correction
         Prandtl, Prandtltip, Prandtlroot = PrandtlTipRootCorrection(r_R, rootradius_R, tipradius_R, Omega*Radius/Uinf, NBlades, anew);
-        if (Prandtl < 1e-1): 
-            Prandtl = 1e-1 # avoid divide by zero
+        if (Prandtl < 1e-4): 
+            Prandtl = 1e-4 # avoid divide by zero
         anew = anew/Prandtl # correct estimate of axial induction
-        a = 0.75*a+0.25*anew # for improving convergence, weigh current and previous iteration of axial induction
-
-        # calculate aximuthal induction
+        a = 0.9*a+0.1*anew # for improving convergence, weigh current and previous iteration of axial induction
+        
+         # calculate aximuthal induction
         aline = ftan*NBlades/(2*np.pi*Uinf*(1-a)*Omega*2*(r_R*Radius)**2)
         aline =aline/Prandtl # correct estimate of azimuthal induction with Prandtl's correction
         # ///////////////////////////////////////////////////////////////////////////
@@ -131,7 +131,6 @@ def solveStreamtube(Uinf, r1_R, r2_R, rootradius_R, tipradius_R , Omega, Radius,
             # print("iterations")
             # print(i)
             break
-
     return [a , aline, r_R, fnorm , ftan, gamma]
 
 """ ------- Sections ------- """
